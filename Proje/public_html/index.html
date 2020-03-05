@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!-- saved from url=(0059)https://www.cs.unm.edu/~angel/WebGL/7E/05/perspective2.html -->
+<html><head><title>404 Memory Not Found</title><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"></head><body><p> </p>
+
+<script id="vertex-shader" type="x-shader/x-vertex">#version 300 es
+
+in  vec4 vPosition;
+in  vec4 vColor;
+in  vec3 vNormal;
+in  vec2 vTexCoord;
+out vec4 fColor;
+out vec2 fTexCoord;
+
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform vec4 lightPosition;
+uniform float shininess;
+uniform mat3 normalMatrix;
+
+uniform float radius;
+uniform float lightX;
+uniform float lightY;
+uniform float lightZ;
+uniform float lightmiktar;
+
+uniform float angle;
+
+uniform float finished;
+
+uniform float expectedX;
+uniform float expectedY;
+uniform float expectedZ;
+
+
+
+void main()
+{
+    float s = sin( angle );
+    float c = cos( angle );
+    
+    gl_Position.x = (-s * vPosition.z + c * vPosition.x);
+    gl_Position.y = vPosition.y;
+    gl_Position.z = ( s * vPosition.x + c * vPosition.z);
+    gl_Position.w = vPosition.w;
+    
+    gl_Position = vec4(gl_Position.x + expectedX,gl_Position.y + expectedY,gl_Position.z + expectedZ,1.0);
+    
+    vec3 pos = -(modelViewMatrix * gl_Position).xyz;
+    
+    gl_Position = projectionMatrix*modelViewMatrix*gl_Position;
+    
+    
+    //fixed light postion
+    
+    vec3 light = lightPosition.xyz;
+    vec3 L = normalize( light - pos );
+
+	
+    vec3 E = normalize( -pos );
+    vec3 H = normalize( L + E );
+    
+    vec4 NN = vec4(vNormal,0);
+
+    // Transform vertex normal into eye coordinates
+       
+    vec3 N = normalize( (modelViewMatrix*NN).xyz);
+
+    // Compute terms in the illumination equation
+    vec4 ambient = ambientProduct;
+
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*diffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4  specular = Ks * specularProduct;
+    
+    if( dot(L, N) < 0.0 ) {
+	specular = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+    
+    fColor = (ambient + diffuse + specular) * vColor;
+    fColor = vec4(fColor.x -lightmiktar,fColor.y -lightmiktar,fColor.z -lightmiktar,1.0);
+    
+    
+    if ((vPosition.x + expectedX - lightX)*(vPosition.x + expectedX - lightX)  > radius  || (vPosition.y + expectedY - lightY)*(vPosition.y + expectedY - lightY)  > radius / 3.0  || (vPosition.z + expectedZ - lightZ)*(vPosition.z + expectedZ - lightZ)  > radius) {
+        if(finished > 1.0 ){
+            fColor = vec4(fColor.x / 5.0,fColor.z / 5.0,fColor.z/5.0,1);
+        }
+    }
+    
+    fTexCoord = vTexCoord;
+    
+} 
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">#version 300 es
+
+#ifdef GL_ES
+precision highp float;
+#endif
+
+in vec4 fColor;
+in  vec2 fTexCoord;
+uniform sampler2D textureBr;
+out vec4 fout;
+
+void
+main()
+{
+    fout =  fColor * texture( textureBr, fTexCoord );
+}
+</script>
+
+
+<script id="v-shader" type="x-shader/x-vertex">#version 300 es
+in vec4 vPosition;//
+in  vec4 vColor;
+in vec4 vNormal;//
+//in  vec2 vTexCoord;
+
+out vec3 N, L, E;//
+//out vec2 fTexCoord;
+//out vec4 ColorCheck;
+out vec4 fColor;
+
+uniform float radius;//
+uniform float lightX;
+uniform float lightY;
+uniform float lightZ;
+uniform float lightmiktar;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform vec4 lightPosition;
+uniform mat3 normalMatrix;
+
+uniform float angle;
+
+uniform float finished;
+
+uniform float expectedX;
+uniform float expectedY;
+uniform float expectedZ;
+
+
+void main()
+{
+    vec3 pos = (modelViewMatrix * vPosition).xyz;
+    
+    // check for directional light
+    
+    if(lightPosition.w == 0.0) L = normalize(lightPosition.xyz);
+    else L = normalize( lightPosition.xyz - pos );
+    
+    E =  -normalize(pos);
+    N = normalize( normalMatrix*vNormal.xyz);
+    
+    //fColor = vec4(fColor.x -lightmiktar,fColor.y -lightmiktar,fColor.z -lightmiktar,1.0);
+    
+    //if ((vPosition.x + expectedX - lightX)*(vPosition.x + expectedX - lightX)  > radius  || (vPosition.y + expectedY - lightY)*(vPosition.y + expectedY - lightY)  > radius / 3.0  || (vPosition.z + expectedZ - lightZ)*(vPosition.z + expectedZ - lightZ)  > radius) {
+      //  if(finished > 1.0 ){
+        //    fColor = vec4(fColor.x / 5.0,fColor.z / 5.0,fColor.z/5.0,1);
+        //}
+    //}
+    fColor = vColor;
+}
+</script>
+
+<script id="f-shader" type="x-shader/x-fragment">#version 300 es
+precision mediump float;
+
+uniform vec4 ambientProduct;
+uniform vec4 diffuseProduct;
+uniform vec4 specularProduct;
+uniform float shininess;
+
+in vec3 N, L, E;
+//in vec4 ColorCheck;
+in vec4 fColor;
+out vec4 FragColor;
+void main()
+{    
+    
+    vec3 H = normalize( L + E );
+    vec4 ambient = ambientProduct;
+
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*diffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4  specular = Ks * specularProduct;
+    
+    if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+    FragColor = (ambient + diffuse +specular)*fColor;
+}
+</script>
+
+<script type="text/javascript" src="./js/webgl-utils.js"></script>
+<script type="text/javascript" src="./js/initShaders.js"></script>
+<script src="js/jquery-3.4.1.js" defer></script>
+<script type="text/javascript" src="./js/MV.js"></script>
+<script type="text/javascript" src="./js/perspective2.js"></script>
+
+
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+<img id = "texImageS" src = "Tex.jpg" hidden></img>
+<embed name="back" src="back.mp3" loop="true" hidden="true" autostart="true">
+
+</body></html>
