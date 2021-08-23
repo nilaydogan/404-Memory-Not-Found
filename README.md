@@ -7,7 +7,7 @@ they have to collect certain objects.
 
 
 This projects made with Apache NetBeans Because of that
-To run project , you need to run files in Apache Netbeans
+To run project , you need to run files in Apache Netbeans.
 
 Coding: Mustafa Candan - https://github.com/MeowlockHolmes
         Nilay   Doğan  - https://github.com/nilaydogan
